@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent_white_especial"
+    android:orientation="horizontal"
+    android:padding="10dp" >
+
+    <LinearLayout 
+        android:onClick="onClickCreateUnity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/Gray"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@android:color/white"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:padding="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/knight" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
