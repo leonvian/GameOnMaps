@@ -9,7 +9,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import br.com.lvc.worldwar.R;
 
-public class EnemyDrawer {
+public class EnemyDrawer implements MapDrawer {
 
 	private Enemy enemy;
 	 
@@ -31,6 +31,9 @@ public class EnemyDrawer {
 		ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.progress_bar_enemy_life);
 		progressBar.setMax(enemy.getLifeMax());
 		progressBar.setProgress(enemy.getLife());
+		
+		TextView textViewEnemyLife =  (TextView) view.findViewById(R.id.text_view_enemy_life);
+		textViewEnemyLife.setText(String.valueOf(enemy.getLife()));
 		
 		return view;
 	}

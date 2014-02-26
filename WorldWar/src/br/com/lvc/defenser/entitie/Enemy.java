@@ -2,7 +2,7 @@ package br.com.lvc.defenser.entitie;
 
 import br.com.lvc.worldwar.entitie.MapPosition;
 
-public class Enemy { 
+public class Enemy implements Comparable<Enemy> { 
 
 	public static final int DEFAULT_SPEED = 200;
 	public static final int DEFAULT_STRENGTH = 50;
@@ -14,7 +14,7 @@ public class Enemy {
 	private int strength;
 	private int speed;
 	private MapPosition mapPosition;
-	private int life;
+	private int life = DEFAULT_LIFE_MAX;
 	private int lifeMax = DEFAULT_LIFE_MAX;
 	
 	public Enemy() {
@@ -96,8 +96,21 @@ public class Enemy {
 	public void setMapPosition(MapPosition mapPosition) {
 		this.mapPosition = mapPosition;
 	}
+
+	@Override
+	public int compareTo(Enemy another) {
+	    
+		return 0;
+	}
 	
+	public void decreaseLife(int decreaseLife) {
+		
+		life = life - decreaseLife;
+	}
 	
+	public void increaseLife(int increaseLife) {
+		life = life + increaseLife;
+	}
 	
 	  
 

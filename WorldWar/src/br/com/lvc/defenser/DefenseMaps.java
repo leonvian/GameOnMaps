@@ -13,6 +13,7 @@ import android.util.Log;
 import br.com.lvc.defenser.entitie.Enemy;
 import br.com.lvc.defenser.entitie.EnemyDrawer;
 import br.com.lvc.defenser.entitie.EnemyFactory;
+import br.com.lvc.defenser.entitie.MapDrawer;
 import br.com.lvc.worldwar.R;
 import br.com.lvc.worldwar.entitie.Castle;
 import br.com.lvc.worldwar.entitie.MapPosition;
@@ -38,10 +39,10 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 	private MapPosition mapPositionBr = new MapPosition(-19.38566266047098, -42.99701750278473);
 
 
-	private Castle castleBr = new Castle(1, "Brasil", "Patria",R.drawable.castle_um, mapPositionBr);
+	private Castle castleBr = new Castle(1, "Brasil", "Patria", R.drawable.castle_um, mapPositionBr);
 
 	//private List<Marker> castleMarkers = new ArrayList<Marker>();
-	private List<Marker> enemyMarkers = new ArrayList<Marker>();
+	private List<EnemyMarker> enemyMarkers = new ArrayList<EnemyMarker>();
 
 	private Marker myCastleMarker;	
 	private Handler handler = new Handler();
@@ -50,7 +51,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 	private double elapsedPercent = 0;
 	private  double lastFrameTime = 0;
 
-	private HashMap<Marker, EnemyDrawer> hashMapMarkerEnemyDrawer = new HashMap<Marker, EnemyDrawer>();
+	private HashMap<Marker, MapDrawer> hashMapMarkerEnemyDrawer = new HashMap<Marker, MapDrawer>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +100,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 	}
 
 	/**
-	 * N‹o esta correspodenndo ao tempo total de marcha
+	 * Nï¿½o esta correspodenndo ao tempo total de marcha
 	 */
 	private void scheduleMarch() {
 		handler.postDelayed(new Runnable() {
@@ -118,19 +119,23 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 				elapsedTime += deltaTime; 
 
 				elapsedPercent = elapsedTime / TOTAL_TIME_TO_FINISH_PATH; 
-				
-				for(Marker marker : enemyMarkers) {
-					LatLng from = marker.getPosition(); 
-					LatLng to = toLatLng(castleBr.getMapPosition());
 
+				for(EnemyMarker enemyMarker : enemyMarkers) {
+					
+					Enemy enemy = enemyMarker.getEnemy();
+					enemy.decreaseLife(1);
+					
+					Marker marker = enemyMarker.getMarker();
+					LatLng from = marker.getPosition(); 
+					LatLng to = toLatLng(castleBr.getMapPosition()); 
 
 					double nextLongitude = (from.longitude + (to.longitude - from.longitude) *  elapsedPercent);
 					double nextLatitude = (from.latitude + (to.latitude - from.latitude) *  elapsedPercent);
 
-
 					LatLng nextMove = new LatLng(nextLatitude, nextLongitude);
 
 					marker.setPosition(nextMove);
+				
 				}
 
 				if(elapsedTime > TOTAL_TIME_TO_FINISH_PATH) {
@@ -152,10 +157,11 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		for(Enemy unity : unitys) {
 			Marker unityMarker = map.addMarker(createUnityMarker(unity));
 			hashMapMarkerEnemyDrawer.put(unityMarker, getEnemeyDrawer(unity));
-			enemyMarkers.add(unityMarker);
+			EnemyMarker enemyMarker = new EnemyMarker(unity, unityMarker);
+			enemyMarkers.add(enemyMarker); 
 		} 
 	}
-	
+
 	private EnemyDrawer getEnemeyDrawer(Enemy enemy) {
 		EnemyDrawer enemyDrawer = new EnemyDrawer(enemy);
 		return enemyDrawer;
@@ -195,20 +201,20 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		return latLng;
 	}
 
-	/*
-	private class UnityMilitarMarker {
 
-		private UnityMilitar unityMilitar;
+	private class EnemyMarker {
+
+		private Enemy enemy;
 		private Marker marker;
 
-		public UnityMilitarMarker(UnityMilitar unityMilitar, Marker marker) {
+		public EnemyMarker(Enemy enemy, Marker marker) {
 			super();
-			this.unityMilitar = unityMilitar;
+			this.enemy = enemy;
 			this.marker = marker;
 		}
-
-		public UnityMilitar getUnityMilitar() {
-			return unityMilitar;
+		
+		public Enemy getEnemy() {
+			return enemy;
 		}
 
 		public Marker getMarker() {
@@ -216,7 +222,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		}
 
 	}
- */
+
 	@Override
 	public boolean onMarkerClick(Marker marker) {
 		Log.i("MARKER CLICK", "LISTENER");
