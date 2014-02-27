@@ -1,19 +1,26 @@
 package br.com.lvc.defenser;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.widget.Toast;
+import br.com.lvc.defenser.entitie.CastleDrawer;
 import br.com.lvc.defenser.entitie.Enemy;
 import br.com.lvc.defenser.entitie.EnemyDrawer;
 import br.com.lvc.defenser.entitie.EnemyFactory;
 import br.com.lvc.defenser.entitie.MapDrawer;
+import br.com.lvc.defenser.entitie.Tower;
+import br.com.lvc.defenser.entitie.TowerDrawer;
+import br.com.lvc.defenser.entitie.TowerFactory;
 import br.com.lvc.worldwar.R;
 import br.com.lvc.worldwar.entitie.Castle;
 import br.com.lvc.worldwar.entitie.MapPosition;
@@ -25,6 +32,8 @@ import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -32,6 +41,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 //br.com.lvc.defenser.DefenseMaps
 public class DefenseMaps extends FragmentActivity implements OnMapLongClickListener, OnInfoWindowClickListener, OnMarkerClickListener, OnMarkerDragListener {
 
+	private static final float RADIUS_IN_METERS =  10000.0f;
 	private static final int TIME_TO_WALK = 10; 
 	private static final double TOTAL_TIME_TO_FINISH_PATH = 60000 * 60;
 
@@ -52,6 +62,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 	private  double lastFrameTime = 0;
 
 	private HashMap<Marker, MapDrawer> hashMapMarkerEnemyDrawer = new HashMap<Marker, MapDrawer>();
+	private HashMap<Circle, Tower> hashMapTowerCircle = new HashMap<Circle, Tower>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +70,9 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		setContentView(R.layout.defense_maps);
 		map = retrieveMap();   
 		myCastleMarker = map.addMarker( createCastleMarker(castleBr) ); 
-
+		CastleDrawer castleDrawer = new CastleDrawer(castleBr);
+		hashMapMarkerEnemyDrawer.put(myCastleMarker, castleDrawer);
+		
 		map.setInfoWindowAdapter(new DefenseMapsWindowAdapter(this, hashMapMarkerEnemyDrawer));
 
 		map.setOnMapLongClickListener(this);
@@ -78,25 +91,25 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		GoogleMap googleMap = mapFragment.getMap();
 		return googleMap;
 	}
-
-	private MarkerOptions createCastleMarker(Castle castle) {
-		MarkerOptions markerOptions = new MarkerOptions();
-		markerOptions.icon(BitmapDescriptorFactory.fromResource(castle.getImage()));
-		markerOptions.snippet(castle.getDescription());
-		markerOptions.title(castle.getName());
-		markerOptions.position(toLatLng(castle));
-		markerOptions.draggable(true);
-
-		return markerOptions;
-	} 
-
+	
 	@Override
 	public void onMapLongClick(LatLng point) { 
 		Log.i("POINT", "LAT/LNG " + point);
+		MapPosition mapPosition = new MapPosition(point);
+		Tower tower = TowerFactory.createSimpleTower(mapPosition);
+		
+		Marker towerMarker = map.addMarker(createTowerMarker(tower));
+		
+		TowerDrawer towerDrawer = new TowerDrawer(tower);
+		hashMapMarkerEnemyDrawer.put(towerMarker, towerDrawer);
+		
+		Circle circle = drawMarkerWithCircle(point);
+		hashMapTowerCircle.put(circle, tower);
 	}
 
 	@Override
 	public void onInfoWindowClick(Marker marker) {
+		
 	}
 
 	/**
@@ -118,14 +131,21 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 
 				elapsedTime += deltaTime; 
 
-				elapsedPercent = elapsedTime / TOTAL_TIME_TO_FINISH_PATH; 
+				elapsedPercent = elapsedTime / TOTAL_TIME_TO_FINISH_PATH;
+				List<EnemyMarker> enemysToRemove = new ArrayList<DefenseMaps.EnemyMarker>();
 
 				for(EnemyMarker enemyMarker : enemyMarkers) {
-					
 					Enemy enemy = enemyMarker.getEnemy();
-					enemy.decreaseLife(1);
-					
 					Marker marker = enemyMarker.getMarker();
+					
+					hitTowerIfisInFireArea(enemyMarker);
+					
+					if(enemy.hasToEliminate()) {
+						enemysToRemove.add(enemyMarker);
+						marker.remove();
+						continue;
+					} 
+					
 					LatLng from = marker.getPosition(); 
 					LatLng to = toLatLng(castleBr.getMapPosition()); 
 
@@ -137,6 +157,8 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 					marker.setPosition(nextMove);
 				
 				}
+				
+				enemyMarkers.removeAll(enemysToRemove);
 
 				if(elapsedTime > TOTAL_TIME_TO_FINISH_PATH) {
 					elapsedTime = TOTAL_TIME_TO_FINISH_PATH;
@@ -149,6 +171,22 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 					scheduleMarch();
 			}
 		}, TIME_TO_WALK);
+	}
+	
+	private void hitTowerIfisInFireArea(EnemyMarker enemyMarker) {
+		Enemy enemy = enemyMarker.getEnemy();
+		Marker marker = enemyMarker.getMarker();
+		 
+		Collection<Tower> circles = hashMapTowerCircle.values();
+		for(Tower circle : circles) {
+			LatLng target = marker.getPosition();
+			if(isMarkerInsideCircle(target, circle)) {
+				 Log.i("DEFENSE", "**** MARKER AVANÇOU TOWER");
+				 enemy.decreaseLife(10);
+			}
+			
+		}
+		
 	}
 
 
@@ -256,5 +294,77 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 				position.latitude,
 				position.longitude));
 	}
+	
+	private Circle drawMarkerWithCircle(LatLng position){
+		
+		int strokeColor = 0xffff0000; //red outline
+		int shadeColor = 0x44ff0000; //opaque red fill
+
+		CircleOptions circleOptions = new CircleOptions().center(position).radius(RADIUS_IN_METERS).fillColor(shadeColor).strokeColor(strokeColor).strokeWidth(8);
+		Circle mCircle = map.addCircle(circleOptions);
+		
+		return mCircle;
+
+ 
+	}
+
+	private boolean isMarkerInsideCircle(LatLng latLng, Tower circle) {
+		
+		float distance = getDistanceInMeters(latLng, toLatLng(circle.getMapPosition()));
+		
+		Log.i("DISTNCE", "DISTANCE " + distance);
+	   if(distance > RADIUS_IN_METERS) {
+	//	   Toast.makeText(getBaseContext(), "Outside", Toast.LENGTH_LONG).show();
+		   return false;
+	   } else {
+		   Toast.makeText(getBaseContext(), "Inside", Toast.LENGTH_LONG).show();
+		   return true;
+	   }
+		
+		/*
+		float[] distance = new float[2];
+
+		Location.distanceBetween( latLng.latitude, latLng.longitude,
+				circle.getCenter().latitude, circle.getCenter().longitude, distance);
+
+		if( distance[0] < circle.getRadius()  ){
+			Toast.makeText(getBaseContext(), "Outside", Toast.LENGTH_LONG).show();
+			return false;
+		} else {
+			Toast.makeText(getBaseContext(), "Inside", Toast.LENGTH_LONG).show();
+			return true;
+		}
+		*/
+	}
+	
+	private MarkerOptions createCastleMarker(Castle castle) {
+		MarkerOptions markerOptions = new MarkerOptions();
+		markerOptions.icon(BitmapDescriptorFactory.fromResource(castle.getImage()));
+		markerOptions.snippet(castle.getDescription());
+		markerOptions.title(castle.getName());
+		markerOptions.position(toLatLng(castle));
+		markerOptions.draggable(true);
+
+		return markerOptions;
+	} 
+	
+	private MarkerOptions createTowerMarker(Tower tower) {
+		MarkerOptions markerOptions = new MarkerOptions();
+		markerOptions.icon(BitmapDescriptorFactory.fromResource(tower.getImageInRes()));
+		//markerOptions.snippet(castle.getDescription());
+		markerOptions.title(getString(tower.getName()));
+		markerOptions.position(toLatLng(tower.getMapPosition()));
+		markerOptions.draggable(true);
+
+		return markerOptions;
+	} 
+	
+	private float getDistanceInMeters(LatLng source, LatLng target) {
+		float[] results = new float[3];
+		Location.distanceBetween(source.latitude, source.longitude, target.latitude, target.longitude, results);
+		float distanceMeters = results[0];
+		return distanceMeters; 
+	}
+
 
 }

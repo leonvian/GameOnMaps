@@ -103,13 +103,19 @@ public class Enemy implements Comparable<Enemy> {
 		return 0;
 	}
 	
-	public void decreaseLife(int decreaseLife) {
-		
+	public void decreaseLife(int decreaseLife) { 
 		life = life - decreaseLife;
 	}
 	
 	public void increaseLife(int increaseLife) {
 		life = life + increaseLife;
+	}
+	
+	public boolean hasToEliminate() {
+		if(life <= 0)
+			return true;
+		else
+			return false;
 	}
 	
 	  
