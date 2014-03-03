@@ -5,13 +5,16 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
+import android.content.Context;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import br.com.lvc.defenser.entitie.CastleDrawer;
 import br.com.lvc.defenser.entitie.Enemy;
@@ -39,17 +42,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 //br.com.lvc.defenser.DefenseMaps
-public class DefenseMaps extends FragmentActivity implements OnMapLongClickListener, OnInfoWindowClickListener, OnMarkerClickListener, OnMarkerDragListener {
+public class DefenseMaps extends FragmentActivity implements   OnInfoWindowClickListener, OnMarkerClickListener, OnMarkerDragListener {
 
 	private static final float RADIUS_IN_METERS =  10000.0f;
 	private static final int TIME_TO_WALK = 10; 
 	private static final double TOTAL_TIME_TO_FINISH_PATH = 60000 * 60;
 
 	protected GoogleMap map; 
-	private MapPosition mapPositionBr = new MapPosition(-19.38566266047098, -42.99701750278473);
 
-
-	private Castle castleBr = new Castle(1, "Brasil", "Patria", R.drawable.castle_um, mapPositionBr);
+	private Castle myCastle = null;
 
 	//private List<Marker> castleMarkers = new ArrayList<Marker>();
 	private List<EnemyMarker> enemyMarkers = new ArrayList<EnemyMarker>();
@@ -63,25 +64,79 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 
 	private HashMap<Marker, MapDrawer> hashMapMarkerEnemyDrawer = new HashMap<Marker, MapDrawer>();
 	private HashMap<Circle, Tower> hashMapTowerCircle = new HashMap<Circle, Tower>();
+	private TextView textViewInstructions;
+
+	private OnMapLongClickListener longClickPutCastleOnMap = new OnMapLongClickListener() {
+
+		@Override
+		public void onMapLongClick(LatLng point) { 
+			vibrate();
+			if(myCastle == null) {
+				MapPosition mapPosition = new MapPosition(point);
+				myCastle = new Castle(1, "Brasil", "Patria", R.drawable.castle_um, mapPosition);
+				myCastleMarker = map.addMarker( createCastleMarker(myCastle) ); 
+				CastleDrawer castleDrawer = new CastleDrawer(myCastle);
+				hashMapMarkerEnemyDrawer.put(myCastleMarker, castleDrawer);	
+				findViewById(R.id.layout_button_start).setVisibility(View.VISIBLE);
+				atualizeInstructions(R.string.you_can_move_your_castle_dragging);
+			} else {
+				atualizeInstructions(R.string.your_castle_was_build_you_can_drag_and_drop_to_a_better_place);
+			}
+
+		}
+	};
+
+	private OnMapLongClickListener longClickPutTowerOnMap = new OnMapLongClickListener() {
+
+		@Override
+		public void onMapLongClick(LatLng point) { 
+			vibrate();
+			MapPosition mapPosition = new MapPosition(point);
+			Tower tower = TowerFactory.createSimpleTower(mapPosition);
+
+			Marker towerMarker = map.addMarker(createTowerMarker(tower));
+
+			TowerDrawer towerDrawer = new TowerDrawer(tower);
+			hashMapMarkerEnemyDrawer.put(towerMarker, towerDrawer);
+
+			Circle circle = drawMarkerWithCircle(point);
+			hashMapTowerCircle.put(circle, tower);
+		}
+	};
+
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.defense_maps);
+		setContentView(R.layout.defense_maps); 
+		textViewInstructions = (TextView) findViewById(R.id.text_view_instructions);
 		map = retrieveMap();   
-		myCastleMarker = map.addMarker( createCastleMarker(castleBr) ); 
-		CastleDrawer castleDrawer = new CastleDrawer(castleBr);
-		hashMapMarkerEnemyDrawer.put(myCastleMarker, castleDrawer);
-		
+
 		map.setInfoWindowAdapter(new DefenseMapsWindowAdapter(this, hashMapMarkerEnemyDrawer));
 
-		map.setOnMapLongClickListener(this);
+		map.setOnMapLongClickListener(longClickPutCastleOnMap);
 		map.setOnInfoWindowClickListener(this);
 		map.setOnMarkerClickListener(this);
 		map.setOnMarkerDragListener(this);
 
+	}
+
+
+	public void onClickStart(View view) { 
+		startGame();  
+	}
+
+	private void startGame() {
+		findViewById(R.id.layout_instructions).setVisibility(View.GONE);
+		findViewById(R.id.layout_button_start).setVisibility(View.GONE); 
+		map.setOnMapLongClickListener(longClickPutTowerOnMap);
 		createUnityEnemysOnMaps();
 		scheduleMarch();
+	}
+
+	private void atualizeInstructions(int messageRes) {
+		textViewInstructions.setText(messageRes);
 	}
 
 
@@ -91,25 +146,12 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 		GoogleMap googleMap = mapFragment.getMap();
 		return googleMap;
 	}
-	
-	@Override
-	public void onMapLongClick(LatLng point) { 
-		Log.i("POINT", "LAT/LNG " + point);
-		MapPosition mapPosition = new MapPosition(point);
-		Tower tower = TowerFactory.createSimpleTower(mapPosition);
-		
-		Marker towerMarker = map.addMarker(createTowerMarker(tower));
-		
-		TowerDrawer towerDrawer = new TowerDrawer(tower);
-		hashMapMarkerEnemyDrawer.put(towerMarker, towerDrawer);
-		
-		Circle circle = drawMarkerWithCircle(point);
-		hashMapTowerCircle.put(circle, tower);
-	}
+
+
 
 	@Override
 	public void onInfoWindowClick(Marker marker) {
-		
+
 	}
 
 	/**
@@ -137,17 +179,18 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 				for(EnemyMarker enemyMarker : enemyMarkers) {
 					Enemy enemy = enemyMarker.getEnemy();
 					Marker marker = enemyMarker.getMarker();
-					
+
 					hitTowerIfisInFireArea(enemyMarker);
-					
+
 					if(enemy.hasToEliminate()) {
 						enemysToRemove.add(enemyMarker);
 						marker.remove();
 						continue;
 					} 
-					
+
 					LatLng from = marker.getPosition(); 
-					LatLng to = toLatLng(castleBr.getMapPosition()); 
+
+					LatLng to = myCastleMarker.getPosition(); 
 
 					double nextLongitude = (from.longitude + (to.longitude - from.longitude) *  elapsedPercent);
 					double nextLatitude = (from.latitude + (to.latitude - from.latitude) *  elapsedPercent);
@@ -155,9 +198,9 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 					LatLng nextMove = new LatLng(nextLatitude, nextLongitude);
 
 					marker.setPosition(nextMove);
-				
+
 				}
-				
+
 				enemyMarkers.removeAll(enemysToRemove);
 
 				if(elapsedTime > TOTAL_TIME_TO_FINISH_PATH) {
@@ -172,21 +215,21 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 			}
 		}, TIME_TO_WALK);
 	}
-	
+
 	private void hitTowerIfisInFireArea(EnemyMarker enemyMarker) {
 		Enemy enemy = enemyMarker.getEnemy();
 		Marker marker = enemyMarker.getMarker();
-		 
+
 		Collection<Tower> circles = hashMapTowerCircle.values();
 		for(Tower circle : circles) {
 			LatLng target = marker.getPosition();
 			if(isMarkerInsideCircle(target, circle)) {
-				 Log.i("DEFENSE", "**** MARKER AVANÇOU TOWER");
-				 enemy.decreaseLife(10);
+				Log.i("DEFENSE", "**** MARKER AVANÇOU TOWER");
+				enemy.decreaseLife(10);
 			}
-			
+
 		}
-		
+
 	}
 
 
@@ -250,7 +293,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 			this.enemy = enemy;
 			this.marker = marker;
 		}
-		
+
 		public Enemy getEnemy() {
 			return enemy;
 		}
@@ -294,49 +337,35 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 				position.latitude,
 				position.longitude));
 	}
-	
+
 	private Circle drawMarkerWithCircle(LatLng position){
-		
+
 		int strokeColor = 0xffff0000; //red outline
 		int shadeColor = 0x44ff0000; //opaque red fill
 
-		CircleOptions circleOptions = new CircleOptions().center(position).radius(RADIUS_IN_METERS).fillColor(shadeColor).strokeColor(strokeColor).strokeWidth(8);
+		CircleOptions circleOptions = new CircleOptions().center(position).radius(RADIUS_IN_METERS).fillColor(shadeColor).strokeColor(strokeColor).strokeWidth(5);
 		Circle mCircle = map.addCircle(circleOptions);
-		
+
 		return mCircle;
 
- 
+
 	}
 
 	private boolean isMarkerInsideCircle(LatLng latLng, Tower circle) {
-		
+
 		float distance = getDistanceInMeters(latLng, toLatLng(circle.getMapPosition()));
-		
+
 		Log.i("DISTNCE", "DISTANCE " + distance);
-	   if(distance > RADIUS_IN_METERS) {
-	//	   Toast.makeText(getBaseContext(), "Outside", Toast.LENGTH_LONG).show();
-		   return false;
-	   } else {
-		   Toast.makeText(getBaseContext(), "Inside", Toast.LENGTH_LONG).show();
-		   return true;
-	   }
-		
-		/*
-		float[] distance = new float[2];
-
-		Location.distanceBetween( latLng.latitude, latLng.longitude,
-				circle.getCenter().latitude, circle.getCenter().longitude, distance);
-
-		if( distance[0] < circle.getRadius()  ){
-			Toast.makeText(getBaseContext(), "Outside", Toast.LENGTH_LONG).show();
+		if(distance > RADIUS_IN_METERS) {
+			//	   Toast.makeText(getBaseContext(), "Outside", Toast.LENGTH_LONG).show();
 			return false;
 		} else {
 			Toast.makeText(getBaseContext(), "Inside", Toast.LENGTH_LONG).show();
 			return true;
 		}
-		*/
+
 	}
-	
+
 	private MarkerOptions createCastleMarker(Castle castle) {
 		MarkerOptions markerOptions = new MarkerOptions();
 		markerOptions.icon(BitmapDescriptorFactory.fromResource(castle.getImage()));
@@ -347,7 +376,7 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 
 		return markerOptions;
 	} 
-	
+
 	private MarkerOptions createTowerMarker(Tower tower) {
 		MarkerOptions markerOptions = new MarkerOptions();
 		markerOptions.icon(BitmapDescriptorFactory.fromResource(tower.getImageInRes()));
@@ -358,12 +387,18 @@ public class DefenseMaps extends FragmentActivity implements OnMapLongClickListe
 
 		return markerOptions;
 	} 
-	
+
 	private float getDistanceInMeters(LatLng source, LatLng target) {
 		float[] results = new float[3];
 		Location.distanceBetween(source.latitude, source.longitude, target.latitude, target.longitude, results);
 		float distanceMeters = results[0];
 		return distanceMeters; 
+	}
+
+
+	private void vibrate() {
+		Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+		v.vibrate(150);
 	}
 
 

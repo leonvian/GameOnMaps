@@ -19,7 +19,6 @@
             class="com.google.android.gms.maps.SupportMapFragment" />
 
         <LinearLayout
-            android:id="@+id/layout_instructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
@@ -28,17 +27,14 @@
             android:orientation="vertical" >
 
             <TextView
-                android:id="@+id/text_view_instructions"
-                android:text="@string/instructions_start"
+                android:textSize="32sp"
+                android:textColor="@android:color/black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
-                android:textSize="28sp" />
+                android:text="@string/app_name" />
         </LinearLayout>
 
         <LinearLayout
-            android:visibility="gone"
-            android:id="@+id/layout_button_start"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -51,8 +47,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:onClick="onClickStart"
-                android:text="@string/start" />
+                android:onClick="onClickNewGame"
+                android:text="@string/new_game" />
+
+            <Button
+                style="@style/ButtonColorCinza"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClickLoadGame"
+                android:text="@string/load_game" />
         </LinearLayout>
     </RelativeLayout>
 

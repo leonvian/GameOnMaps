@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">WorldWar</string>
+    <string name="app_name">World Defender</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    
+    <string name="start">Iniciar</string>
+    <string name="new_game">Novo Jogo</string>
+    <string name="load_game">Carregar Jogo</string>
     <string name="knight">Cavaleiro</string>
     <string name="knight_description">Cavaleiro honrado.</string>
     <string name="legal">Legal Notices</string>
@@ -22,5 +26,10 @@
     <string name="heisman_trophy">Original home of the Heisman Trophy</string>
     <string name="icon">CommonsWare logo</string>
     <string name="tower">Tower</string>
+    <string name="instructions_start">Pressione o local no qual deseja construir o seu castelo.</string>
+    
+    <string name="you_can_move_your_castle_dragging">Você pode mudar o local do seu castelo, arrastando e soltando no lugar desejado.</string>
+    <string name="your_castle_was_build_you_can_drag_and_drop_to_a_better_place">Seu castelo já foi construído você poderá arrasta-lo para outro lugar.</string>
+    
 
 </resources>
