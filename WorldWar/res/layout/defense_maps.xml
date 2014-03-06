@@ -19,6 +19,60 @@
             class="com.google.android.gms.maps.SupportMapFragment" />
 
         <LinearLayout
+            android:id="@+id/layout_enemys_status_main"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentTop="true"
+            android:background="@android:color/transparent"
+            android:gravity="top|center"
+            android:orientation="vertical"
+            android:visibility="gone" >
+
+            <TextView
+                android:background="@android:color/transparent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center"
+                android:layout_margin="2dp"
+                android:text="@string/enemys"
+                android:gravity="center"
+                android:textColor="@android:color/black" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent_white_especial"
+                android:fillViewport="true" >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|center"
+                    android:orientation="horizontal" >
+
+                    <LinearLayout
+                        android:id="@+id/layout_enemys_status_one"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_weight="1"
+                        android:gravity="top|center"
+                        android:orientation="vertical" >
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_enemys_status_two"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="top|center"
+                        android:orientation="vertical" >
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/layout_instructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -29,22 +83,22 @@
 
             <TextView
                 android:id="@+id/text_view_instructions"
-                android:text="@string/instructions_start"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="@string/instructions_start"
                 android:textColor="@android:color/black"
                 android:textSize="28sp" />
         </LinearLayout>
 
         <LinearLayout
-            android:visibility="gone"
             android:id="@+id/layout_button_start"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:background="@color/transparent_white_especial"
             android:gravity="center"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:visibility="gone" >
 
             <Button
                 style="@style/ButtonColorBranco"

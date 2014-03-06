@@ -27,6 +27,7 @@
     <string name="icon">CommonsWare logo</string>
     <string name="tower">Tower</string>
     <string name="instructions_start">Pressione o local no qual deseja construir o seu castelo.</string>
+    <string name="enemys">Inimigos</string>
     
     <string name="you_can_move_your_castle_dragging">Você pode mudar o local do seu castelo, arrastando e soltando no lugar desejado.</string>
     <string name="your_castle_was_build_you_can_drag_and_drop_to_a_better_place">Seu castelo já foi construído você poderá arrasta-lo para outro lugar.</string>

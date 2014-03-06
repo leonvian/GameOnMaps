@@ -4,6 +4,9 @@ import br.com.lvc.worldwar.entitie.MapPosition;
 
 public class Tower {
 	
+	public static final int CIRCLE_MARGIN_COLOR = 0xffff0000; //red outline
+	public static final int CIRCLE_INSIDE_COLOR = 0x44ff0000; //opaque red fill
+	
 	private int name;
 	private MapPosition mapPosition;
 	private int imageInRes;
